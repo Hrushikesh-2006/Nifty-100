@@ -2,7 +2,7 @@
 
 # 📈 Nifty 100 Financial Intelligence Platform
 
-![Nifty 100 Hero](static/images/hero.png)
+![Nifty 100 Home](static/images/home.png)
 
 ### *Precision Analytics for India's Top 100 Market Leaders*
 
@@ -89,12 +89,20 @@ python manage.py runserver
 <div align="center">
   <table>
     <tr>
-      <td><b>Market Leaderboard</b></td>
+      <td><b>Executive Dashboard</b></td>
+      <td><b>Stock Screener</b></td>
+    </tr>
+    <tr>
+      <td><img src="static/images/dashboard.png" width="400"></td>
+      <td><img src="static/images/screener.png" width="400"></td>
+    </tr>
+    <tr>
+      <td><b>Head-to-Head Comparison</b></td>
       <td><b>Company Deep Dive</b></td>
     </tr>
     <tr>
-      <td><img src="static/images/hero.png" width="400"></td>
-      <td><img src="static/images/architecture.png" width="400"></td>
+      <td><img src="static/images/compare.png" width="400"></td>
+      <td><img src="static/images/detail.png" width="400"></td>
     </tr>
   </table>
 </div>
@@ -104,7 +112,7 @@ python manage.py runserver
 ## 📞 Support & Contact
 
 Developed by **Hrushikesh**  
-📧 [hrushikesh.anumula@example.com](mailto:hrushikesh.anumula@example.com)  
+📧 [hrushikeshanumula1111@gmail.com](mailto:hrushikeshanumula1111@gmail.com)  
 🔗 [GitHub Profile](https://github.com/Hrushikesh-2006)
 
 ---
