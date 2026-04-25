@@ -11,6 +11,7 @@
 [![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Managed-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge)](LICENSE)
+[![Watch Demo](https://img.shields.io/badge/Watch-Demo-red?style=for-the-badge&logo=youtube&logoColor=white)](https://drive.google.com/file/d/1r25pBvjGWSN1tpOCtvcqYv1v37Kmfuu7/view?usp=drivesdk)
 
 </div>
 
@@ -19,6 +20,9 @@
 ## 🌟 Project Overview
 
 The **Nifty 100 Financial Intelligence Platform** is a high-performance web application designed for investors, analysts, and financial enthusiasts. It provides deep insights into India's top 100 companies by market capitalization, combining historical financial data with **real-time metrics** and **ML-driven health scores**.
+
+### 📺 Watch Demo
+Experience the platform in action! Check out our [**Video Walkthrough**](https://drive.google.com/file/d/1r25pBvjGWSN1tpOCtvcqYv1v37Kmfuu7/view?usp=drivesdk) to see the real-time data sync, ML scoring, and executive dashboards.
 
 ### 🚀 Key Features
 - **⚡ Real-time Market Data**: Live stock prices, revenue, and margins via FMP API.
