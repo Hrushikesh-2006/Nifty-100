@@ -29,6 +29,63 @@ The **Nifty 100 Financial Intelligence Platform** is a high-performance web appl
 
 ---
 
+## 📂 Datasets & Sources
+
+The platform is powered by a robust multi-dimensional dataset processed through a custom ETL pipeline.
+
+| Dataset | Description | Key Metrics Included |
+| :--- | :--- | :--- |
+| **Balance Sheet** | Historical 12-year financial position | Assets, Liabilities, Debt-to-Equity, Net Worth |
+| **Profit & Loss** | Comprehensive income statements | Sales, Operating Profit, NPM%, OPM%, EPS |
+| **Cash Flow** | Inflow/Outflow tracking | Operating CF, Investing CF, Free Cash Flow |
+| **Analysis** | Pre-calculated growth & ratio metrics | Sales Growth (3Y/5Y), ROE, ROCE Trends |
+| **Pros & Cons** | Qualitative business analysis | Strengths, Weaknesses, Business Risks |
+| **Documents** | Official company filings | Annual Reports, Investor Presentations |
+| **Company Meta** | Basic entity information | Market Cap, Sector, Website, Face Value |
+
+---
+
+## 🧠 Data Analysis & ML Scoring
+
+The platform uses a **Weighted Multi-Factor Scoring Algorithm** to evaluate company health. Every company is assigned a score from **0 to 100** based on six critical dimensions:
+
+### 📊 Scoring Dimensions:
+1. **Profitability (25%)**: Net Profit Margins (NPM) and Operating Margins (OPM) benchmarked against sector peers.
+2. **Growth (20%)**: 5-year compounded sales and profit growth rates.
+3. **Leverage (20%)**: Debt-to-Equity and Interest Coverage ratios (lower debt = higher score).
+4. **Cash Flow (20%)**: Efficiency in converting accounting profits into actual free cash flow.
+5. **Trend Analysis (10%)**: Comparison of recent 2-year performance vs. previous 3-year averages.
+6. **Dividends (5%)**: Consistent payout history and yield stability.
+
+### 🏷️ Health Classification:
+- 💎 **80-100 (EXCELLENT)**: Market leaders with superior fundamentals.
+- ✅ **60-79 (GOOD)**: Stable companies with strong growth potential.
+- ⚖️ **40-59 (AVERAGE)**: Balanced performance with moderate risk.
+- ⚠️ **20-39 (WEAK)**: Deteriorating fundamentals or high leverage.
+- ❌ **0-19 (POOR)**: Significant financial distress.
+
+---
+
+## ⚡ Real-time Data Integration
+
+To provide live market insights, the platform integrates with the **Financial Modeling Prep (FMP) API**.
+
+### How it Works:
+- **Direct Sync**: On-demand fetching of live stock prices and the latest quarterly financial metrics.
+- **Intelligent Caching**: Uses a **15-minute Redis/In-memory cache** for every symbol. This ensures lightning-fast responses and prevents API rate limiting.
+- **Graceful Fallback**: If the live API is unreachable, the system automatically serves the most recent cached data or historical benchmarks.
+- **Automated Fetching**: A management command `python manage.py fetch_realtime_data` can be scheduled to keep the entire 100-company universe updated.
+
+---
+
+## 🏗️ Architecture
+
+<div align="center">
+  <img src="static/images/architecture.png" width="400" alt="Architecture Diagram">
+</div>
+
+---
+
 ## 🛠️ Tech Stack
 
 <div align="center">
@@ -43,21 +100,6 @@ The **Nifty 100 Financial Intelligence Platform** is a high-performance web appl
 | **ML/ETL** | ![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas) ![ScikitLearn](https://img.shields.io/badge/Scikit_Learn-F7931E?style=flat-square&logo=scikit-learn) |
 
 </div>
-
----
-
-## 🏗️ Architecture
-
-<div align="center">
-  <img src="static/images/architecture.png" width="400" alt="Architecture Diagram">
-</div>
-
-### How it Works:
-1.  **Data Extraction**: The ETL pipeline fetches raw data from official exchanges and Excel files.
-2.  **Processing**: Pandas and Scikit-learn clean the data and calculate **ML Health Scores**.
-3.  **Real-time Sync**: The `RealtimeDataService` fetches live metrics from FMP API with a **15-minute intelligent cache**.
-4.  **API Layer**: Django Rest Framework (DRF) serves JSON data to the frontend.
-5.  **Frontend**: A responsive dashboard renders data with color-coded health indicators and interactive charts.
 
 ---
 
