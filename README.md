@@ -1,8 +1,8 @@
 <div align="center">
 
-# 📈 Nifty 100 Financial Intelligence Platform
+# 🚀 India's Premier Financial Intelligence Platform
 
-![Nifty 100 Home](static/images/home.png)
+![Main Hero](static/images/hero_main.png)
 
 ### *Precision Analytics for India's Top 100 Market Leaders*
 
@@ -48,13 +48,15 @@ The **Nifty 100 Financial Intelligence Platform** is a high-performance web appl
 
 ## 🏗️ Architecture
 
-![Architecture Diagram](static/images/architecture.png)
+<div align="center">
+  <img src="static/images/architecture.png" width="400" alt="Architecture Diagram">
+</div>
 
 ### How it Works:
 1.  **Data Extraction**: The ETL pipeline fetches raw data from official exchanges and Excel files.
 2.  **Processing**: Pandas and Scikit-learn clean the data and calculate **ML Health Scores**.
-3.  **Real-time Sync**: The `RealtimeDataService` fetches live metrics from FMP API with a **15-minute intelligent cache** to prevent rate limiting.
-4.  **API Layer**: Django Rest Framework (DRF) serves JSON data to the frontend and provides endpoints for comparisons.
+3.  **Real-time Sync**: The `RealtimeDataService` fetches live metrics from FMP API with a **15-minute intelligent cache**.
+4.  **API Layer**: Django Rest Framework (DRF) serves JSON data to the frontend.
 5.  **Frontend**: A responsive dashboard renders data with color-coded health indicators and interactive charts.
 
 ---
@@ -89,20 +91,20 @@ python manage.py runserver
 <div align="center">
   <table>
     <tr>
-      <td><b>Executive Dashboard</b></td>
+      <td><b>Market Overview</b></td>
       <td><b>Stock Screener</b></td>
     </tr>
     <tr>
-      <td><img src="static/images/dashboard.png" width="400"></td>
+      <td><img src="static/images/home.png" width="400"></td>
       <td><img src="static/images/screener.png" width="400"></td>
     </tr>
     <tr>
       <td><b>Head-to-Head Comparison</b></td>
-      <td><b>Company Deep Dive</b></td>
+      <td><b>Executive Dashboard</b></td>
     </tr>
     <tr>
       <td><img src="static/images/compare.png" width="400"></td>
-      <td><img src="static/images/detail.png" width="400"></td>
+      <td><img src="static/images/dashboard.png" width="400"></td>
     </tr>
   </table>
 </div>
