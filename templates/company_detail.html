@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block title %}{{ company.symbol }} — {{ company.company_name }} | Nifty 100{% endblock %}
+{% block desc %}Financial analysis for {{ company.company_name }}: revenue trends, P&L, balance sheet, cash flows, and ML health score.{% endblock %}
+
+{% block content %}
+<div class="company-detail-page">
+
+  <!-- COMPANY HEADER -->
+  <div class="company-hero">
+    <div class="company-hero-left">
+      <div class="breadcrumb">
+        <a href="/">Home</a> &rsaquo;
+        <a href="/?sector={{ company.sector.sector_name }}">{{ company.sector.sector_name }}</a> &rsaquo;
+        {{ company.symbol }}
+      </div>
+      <h1 class="company-title">{{ company.company_name }}</h1>
+      <div class="company-meta">
+        <span class="sector-tag large">{{ company.sector.sector_name }}</span>
+        {% if company.website %}<a href="{{ company.website }}" target="_blank" class="ext-link">Website</a>{% endif %}
+        {% if company.nse_profile %}<a href="{{ company.nse_profile }}" target="_blank" class="ext-link">NSE</a>{% endif %}
+        {% if company.bse_profile %}<a href="{{ company.bse_profile }}" target="_blank" class="ext-link">BSE</a>{% endif %}
+        <div class="live-price-box" data-symbol="{{ company.symbol }}" style="margin-left: 15px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 8px; font-weight: bold; display: inline-flex; gap: 8px; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
+          <span class="live-pulse" style="width:8px; height:8px; background:#22c55e; border-radius:50%; box-shadow: 0 0 8px #22c55e;"></span>
+          ₹<span class="lp-val">--</span>
+          <span class="lp-change" style="font-size:0.9em;">--</span>
+        </div>
+      </div>
+      {% if company.about_company and company.about_company != "nan" %}
+      <p class="company-about">{{ company.about_company|truncatechars:300 }}</p>
+      {% endif %}
+    </div>
+
+    <!-- SCORE GAUGE -->
+    {% if latest_score %}
+    <div class="score-panel">
+      <div class="score-circle health-circle-{{ latest_score.health_label|lower }}">
+        <span class="score-big">{{ latest_score.overall_score|floatformat:0 }}</span>
+        <span class="score-label-sm">/ 100</span>
+      </div>
+      <div class="health-badge-lg health-{{ latest_score.health_label|lower }}">{{ latest_score.health_label }}</div>
+      <div class="score-breakdown">
+        <div class="sb-row"><span>Profitability</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.profitability_score }}%"></div></div><span>{{ latest_score.profitability_score|floatformat:0 }}</span></div>
+        <div class="sb-row"><span>Growth</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.growth_score }}%"></div></div><span>{{ latest_score.growth_score|floatformat:0 }}</span></div>
+        <div class="sb-row"><span>Leverage</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.leverage_score }}%"></div></div><span>{{ latest_score.leverage_score|floatformat:0 }}</span></div>
+        <div class="sb-row"><span>Cash Flow</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.cashflow_score }}%"></div></div><span>{{ latest_score.cashflow_score|floatformat:0 }}</span></div>
+        <div class="sb-row"><span>Dividend</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.dividend_score }}%"></div></div><span>{{ latest_score.dividend_score|floatformat:0 }}</span></div>
+        <div class="sb-row"><span>Trend</span><div class="mini-bar"><div class="mini-fill" style="width:{{ latest_score.trend_score }}%"></div></div><span>{{ latest_score.trend_score|floatformat:0 }}</span></div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- KPI TILES -->
+  <div class="kpi-tiles">
+    {% if company.face_value %}<div class="kpi-tile"><div class="kpi-v">₹{{ company.face_value }}</div><div class="kpi-l">Face Value</div></div>{% endif %}
+    {% if company.book_value %}<div class="kpi-tile"><div class="kpi-v">₹{{ company.book_value|floatformat:0 }}</div><div class="kpi-l">Book Value</div></div>{% endif %}
+    {% if company.roce_percentage %}<div class="kpi-tile positive"><div class="kpi-v">{{ company.roce_percentage|floatformat:1 }}%</div><div class="kpi-l">ROCE</div></div>{% endif %}
+    {% if company.roe_percentage %}<div class="kpi-tile positive"><div class="kpi-v">{{ company.roe_percentage|floatformat:1 }}%</div><div class="kpi-l">ROE</div></div>{% endif %}
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="live">Live Chart</button>
+    <button class="tab-btn" data-tab="pl">P&amp;L</button>
+    <button class="tab-btn" data-tab="bs">Balance Sheet</button>
+    <button class="tab-btn" data-tab="cf">Cash Flow</button>
+    <button class="tab-btn" data-tab="growth">Growth</button>
+    <button class="tab-btn" data-tab="proscons">Pros &amp; Cons</button>
+    {% if docs %}<button class="tab-btn" data-tab="docs">Reports</button>{% endif %}
+  </div>
+
+  <!-- TAB: Live Chart -->
+  <div class="tab-pane active" id="tab-live">
+    <div class="chart-card wide" style="padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.1);">
+      <!-- TradingView Widget BEGIN -->
+      <div class="tradingview-widget-container" style="height:600px; width:100%">
+        <div id="tradingview_{{ company.symbol }}"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+        <script type="text/javascript">
+        new TradingView.widget({
+          "autosize": true,
+          "symbol": "NSE:{{ company.symbol }}",
+          "interval": "D",
+          "timezone": "Asia/Kolkata",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "enable_publishing": false,
+          "backgroundColor": "rgba(15, 23, 42, 1)",
+          "gridColor": "rgba(255, 255, 255, 0.06)",
+          "hide_top_toolbar": false,
+          "hide_legend": false,
+          "save_image": false,
+          "container_id": "tradingview_{{ company.symbol }}"
+        });
+        </script>
+      </div>
+      <!-- TradingView Widget END -->
+    </div>
+  </div>
+
+  <!-- TAB: P&L -->
+  <div class="tab-pane" id="tab-pl">
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <h3>Revenue &amp; Net Profit (₹ Cr)</h3>
+        <canvas id="revChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Margin Trends (%)</h3>
+        <canvas id="marginChart" height="100"></canvas>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Year</th><th>Sales</th><th>Expenses</th><th>Op. Profit</th><th>OPM%</th><th>Net Profit</th><th>NPM%</th><th>EPS</th><th>Div%</th></tr></thead>
+        <tbody>
+          {% for r in pl_records %}
+          <tr>
+            <td>{{ r.year.year_label }}</td>
+            <td>{% if r.sales %}{{ r.sales|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.expenses %}{{ r.expenses|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.operating_profit %}{{ r.operating_profit|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.opm_pct %}{{ r.opm_pct|floatformat:1 }}%{% else %}—{% endif %}</td>
+            <td class="{% if r.net_profit and r.net_profit > 0 %}positive{% elif r.net_profit %}negative{% endif %}">
+              {% if r.net_profit %}{{ r.net_profit|floatformat:0 }}{% else %}—{% endif %}
+            </td>
+            <td>{% if r.net_profit_margin_pct %}{{ r.net_profit_margin_pct|floatformat:1 }}%{% else %}—{% endif %}</td>
+            <td>{% if r.eps %}{{ r.eps|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td>{% if r.dividend_payout_pct %}{{ r.dividend_payout_pct|floatformat:1 }}%{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Balance Sheet -->
+  <div class="tab-pane" id="tab-bs">
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <h3>Assets &amp; Liabilities (₹ Cr)</h3>
+        <canvas id="bsChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Debt-to-Equity Ratio</h3>
+        <canvas id="d2eChart" height="100"></canvas>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Year</th><th>Equity</th><th>Reserves</th><th>Borrowings</th><th>Total Assets</th><th>D/E</th></tr></thead>
+        <tbody>
+          {% for r in bs_records %}
+          <tr>
+            <td>{{ r.year.year_label }}</td>
+            <td>{% if r.equity_capital %}{{ r.equity_capital|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.reserves %}{{ r.reserves|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.borrowings %}{{ r.borrowings|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td>{% if r.total_assets %}{{ r.total_assets|floatformat:0 }}{% else %}—{% endif %}</td>
+            <td class="{% if r.debt_to_equity and r.debt_to_equity < 1 %}positive{% elif r.debt_to_equity and r.debt_to_equity > 2 %}negative{% endif %}">
+              {% if r.debt_to_equity %}{{ r.debt_to_equity|floatformat:2 }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Cash Flow -->
+  <div class="tab-pane" id="tab-cf">
+    <div class="charts-row">
+      <div class="chart-card wide">
+        <h3>Cash Flow Breakdown (₹ Cr)</h3>
+        <canvas id="cfChart" height="100"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Free Cash Flow (₹ Cr)</h3>
+        <canvas id="fcfChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Growth -->
+  <div class="tab-pane" id="tab-growth">
+    <div class="growth-grid">
+      {% for metric, periods in analysis_map.items %}
+      <div class="growth-card">
+        <h4>{{ metric|title|cut:"_" }}</h4>
+        <div class="growth-periods">
+          {% for period, val in periods.items %}
+          <div class="gp-row">
+            <span class="gp-label">{{ period }}</span>
+            <span class="gp-val {% if val and val > 0 %}positive{% elif val %}negative{% endif %}">
+              {% if val %}{{ val|floatformat:1 }}%{% else %}—{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="empty-msg">No growth data available.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- TAB: Pros & Cons -->
+  <div class="tab-pane" id="tab-proscons">
+    <div class="proscons-grid">
+      <div class="pros-col">
+        <h3 class="pros-title">Strengths</h3>
+        {% for p in pros %}
+        <div class="pro-item"><span class="pro-icon">+</span>{{ p.text }}</div>
+        {% empty %}<p class="empty-msg">No strengths data.</p>{% endfor %}
+      </div>
+      <div class="cons-col">
+        <h3 class="cons-title">Risks</h3>
+        {% for c in cons %}
+        <div class="con-item"><span class="con-icon">-</span>{{ c.text }}</div>
+        {% empty %}<p class="empty-msg">No risks data.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Docs -->
+  {% if docs %}
+  <div class="tab-pane" id="tab-docs">
+    <div class="docs-list">
+      {% for d in docs %}
+      <a href="{{ d.report_url }}" target="_blank" class="doc-item">
+        <span class="doc-icon">PDF</span>
+        <span>Annual Report — {{ d.year }}</span>
+        <span class="doc-arrow">→</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const D = {{ chart_json|safe }};
+const CHT_DEFAULTS = {
+  responsive: true,
+  plugins: { legend: { labels: { color: '#94a3b8' } } },
+  scales: {
+    x: { ticks: { color: '#64748b', maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+  }
+};
+
+// Revenue Chart
+new Chart(document.getElementById('revChart'), {
+  type: 'bar',
+  data: {
+    labels: D.years,
+    datasets: [
+      { label: 'Sales', data: D.sales, backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 4 },
+      { label: 'Net Profit', data: D.net_profit, backgroundColor: 'rgba(34,197,94,0.7)', type: 'bar', borderRadius: 4 }
+    ]
+  },
+  options: { ...CHT_DEFAULTS }
+});
+
+// Margin Chart
+new Chart(document.getElementById('marginChart'), {
+  type: 'line',
+  data: {
+    labels: D.years,
+    datasets: [
+      { label: 'OPM %', data: D.opm_pct, borderColor: '#f59e0b', tension: 0.4, fill: false, pointRadius: 3 },
+      { label: 'NPM %', data: D.npm_pct, borderColor: '#06b6d4', tension: 0.4, fill: false, pointRadius: 3 }
+    ]
+  },
+  options: { ...CHT_DEFAULTS }
+});
+
+// Balance Sheet Chart
+new Chart(document.getElementById('bsChart'), {
+  type: 'bar',
+  data: {
+    labels: D.bs_years,
+    datasets: [
+      { label: 'Borrowings', data: D.borrowings, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 },
+      { label: 'Reserves',   data: D.reserves,   backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 4 },
+      { label: 'Total Assets', data: D.total_assets, backgroundColor: 'rgba(34,197,94,0.5)', type: 'line', borderColor: '#22c55e', fill: false }
+    ]
+  },
+  options: { ...CHT_DEFAULTS }
+});
+
+// D2E Chart
+new Chart(document.getElementById('d2eChart'), {
+  type: 'line',
+  data: {
+    labels: D.bs_years,
+    datasets: [
+      { label: 'Debt/Equity', data: D.d2e, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.4, fill: true, pointRadius: 4 }
+    ]
+  },
+  options: { ...CHT_DEFAULTS }
+});
+
+// Cash Flow
+new Chart(document.getElementById('cfChart'), {
+  type: 'bar',
+  data: {
+    labels: D.cf_years,
+    datasets: [
+      { label: 'Operating', data: D.op_cf, backgroundColor: 'rgba(34,197,94,0.7)', borderRadius: 4 },
+      { label: 'Investing', data: D.inv_cf, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4 },
+      { label: 'Financing', data: D.fin_cf, backgroundColor: 'rgba(99,102,241,0.7)', borderRadius: 4 }
+    ]
+  },
+  options: { ...CHT_DEFAULTS, scales: { ...CHT_DEFAULTS.scales, x: { ...CHT_DEFAULTS.scales.x, stacked: true }, y: { ...CHT_DEFAULTS.scales.y, stacked: true } } }
+});
+
+// FCF
+new Chart(document.getElementById('fcfChart'), {
+  type: 'bar',
+  data: {
+    labels: D.cf_years,
+    datasets: [{ label: 'Free Cash Flow', data: D.fcf, backgroundColor: D.fcf.map(v => v >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(239,68,68,0.7)'), borderRadius: 4 }]
+  },
+  options: { ...CHT_DEFAULTS }
+});
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Live Price Polling
+function fetchLivePrice() {
+  const sym = "{{ company.symbol }}";
+  fetch(`/api/live-metrics/?symbols=${sym}`)
+    .then(r => r.json())
+    .then(data => {
+      const info = data[sym];
+      if (info) {
+        const box = document.querySelector('.live-price-box');
+        const valEl = box.querySelector('.lp-val');
+        const chgEl = box.querySelector('.lp-change');
+        const pulse = box.querySelector('.live-pulse');
+        
+        valEl.textContent = info.price.toFixed(2);
+        const isUp = info.change >= 0;
+        chgEl.textContent = `${isUp ? '+' : ''}${info.change.toFixed(2)} (${isUp ? '+' : ''}${info.pct_change.toFixed(2)}%)`;
+        chgEl.style.color = isUp ? '#22c55e' : '#ef4444';
+        
+        pulse.style.background = isUp ? '#22c55e' : '#ef4444';
+        pulse.style.boxShadow = `0 0 8px ${isUp ? '#22c55e' : '#ef4444'}`;
+      }
+    }).catch(e => console.error("Live price error:", e));
+}
+fetchLivePrice();
+setInterval(fetchLivePrice, 15000);
+</script>
+{% endblock %}

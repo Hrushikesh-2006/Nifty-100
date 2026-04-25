@@ -1,0 +1,211 @@
+{% extends "base.html" %} {% block title %}Compare Companies | Nifty 100{% endblock %} {% block content %}
+<div class="compare-page">
+  <div style="margin-bottom: 20px">
+    <a
+      href="/"
+      class="btn"
+      style="
+        background: var(--bg-card2);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      "
+    >
+      &larr; Back to Home
+    </a>
+  </div>
+  <h1>Side-by-Side <span class="gradient-text">Comparison</span></h1>
+  <p style="color: var(--text-secondary); margin-bottom: 28px">
+    Compare any two Nifty 100 companies head-to-head.
+  </p>
+
+  <form method="get" class="compare-form">
+    <div class="filter-group">
+      <label
+        style="
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+          text-transform: uppercase;
+        "
+        >Company 1</label
+      >
+      <select name="sym1" class="compare-select" onchange="this.form.submit()">
+        <option value="">Select company...</option>
+        {% for sym, name in all_companies %}
+        <option value="{{ sym }}" {% if sym1 == sym %}selected{% endif %}>
+          {{ sym }} — {{ name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div
+      style="
+        align-self: flex-end;
+        padding-bottom: 10px;
+        font-size: 20px;
+        color: var(--text-muted);
+      "
+    >
+      vs
+    </div>
+    <div class="filter-group">
+      <label
+        style="
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+          text-transform: uppercase;
+        "
+        >Company 2</label
+      >
+      <select name="sym2" class="compare-select" onchange="this.form.submit()">
+        <option value="">Select company...</option>
+        {% for sym, name in all_companies %}
+        <option value="{{ sym }}" {% if sym2 == sym %}selected{% endif %}>
+          {{ sym }} — {{ name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="filter-btn" style="align-self: flex-end">
+      Compare
+    </button>
+  </form>
+
+  {% if c1 and c2 %}
+  <div class="compare-grid">
+    {% for c in companies_to_compare %} {% with score=c.ml_scores.first %}
+    <div class="compare-card">
+      <div class="compare-sym">{{ c.symbol }}</div>
+      <div class="compare-name">{{ c.company_name }}</div>
+      <div class="compare-live-wrap" style="margin-bottom: 16px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px; color: var(--text-muted);">Live:</span>
+        <span class="live-price" data-sym="{{ c.symbol }}" style="font-size: 18px; font-weight: 800; color: #fff;">₹--</span>
+        <span class="live-chg" data-sym="{{ c.symbol }}" style="font-size: 13px; font-weight: 600;">--%</span>
+      </div>
+      {% if score %}
+      <div style="margin-bottom: 14px">
+        <span class="health-badge health-{{ score.health_label|lower }}"
+          >{{ score.health_label }}</span
+        >
+        <span
+          style="
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--gold);
+            margin-left: 10px;
+          "
+          >{{ score.overall_score|floatformat:0 }}/100</span
+        >
+      </div>
+      {% endif %}
+      <div class="compare-metrics">
+        <div class="cm-row">
+          <span class="cm-label">Sector</span>
+          <span class="cm-val">{{ c.sector.sector_name }}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">ROCE %</span>
+          <span class="cm-val positive">{% if c.roce_percentage %}{{ c.roce_percentage|floatformat:1 }}%{% else %}—{% endif %}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">ROE %</span>
+          <span class="cm-val positive">{% if c.roe_percentage %}{{ c.roe_percentage|floatformat:1 }}%{% else %}—{% endif %}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">Face Value</span>
+          <span class="cm-val">{% if c.face_value %}₹{{ c.face_value }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">Book Value</span>
+          <span class="cm-val">{% if c.book_value %}₹{{ c.book_value|floatformat:0 }}{% else %}—{% endif %}</span>
+        </div>
+        {% if score %}
+        <div class="cm-row">
+          <span class="cm-label">Profitability</span>
+          <span class="cm-val">{{ score.profitability_score|floatformat:0 }}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">Growth</span>
+          <span class="cm-val">{{ score.growth_score|floatformat:0 }}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">Leverage</span>
+          <span class="cm-val">{{ score.leverage_score|floatformat:0 }}</span>
+        </div>
+        <div class="cm-row">
+          <span class="cm-label">Cash Flow</span>
+          <span class="cm-val">{{ score.cashflow_score|floatformat:0 }}</span>
+        </div>
+        {% endif %}
+      </div>
+      <a
+        href="/company/{{ c.symbol }}/"
+        class="filter-btn"
+        style="
+          display: block;
+          text-align: center;
+          margin-top: 20px;
+          text-decoration: none;
+        "
+        >View Full Dashboard</a
+      >
+    </div>
+    {% endwith %} {% endfor %}
+  </div>
+  {% elif sym1 or sym2 %}
+  <div class="empty-state">
+    <p>Please select two companies to compare.</p>
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 60px; color: var(--text-muted)">
+    <p style="font-size: 3rem; margin-bottom: 12px">⚖</p>
+    <p>Select two companies above to compare them side by side.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const priceElements = document.querySelectorAll('.live-price');
+  if (priceElements.length === 0) return;
+  
+  const symbols = Array.from(priceElements).map(el => el.getAttribute('data-sym'));
+  
+  function fetchLive() {
+    fetch(`/api/live-metrics/?symbols=${symbols.join(',')}`)
+      .then(r => r.json())
+      .then(data => {
+        symbols.forEach(sym => {
+          const info = data[sym];
+          if (info) {
+            const isUp = info.change >= 0;
+            const color = isUp ? '#22c55e' : '#ef4444';
+            const arrow = isUp ? '▲' : '▼';
+            
+            const priceEl = document.querySelector(`.live-price[data-sym="${sym}"]`);
+            const chgEl = document.querySelector(`.live-chg[data-sym="${sym}"]`);
+            
+            if (priceEl) priceEl.textContent = `₹${info.price.toFixed(2)}`;
+            if (chgEl) {
+              chgEl.innerHTML = `${arrow} ${info.pct_change.toFixed(2)}%`;
+              chgEl.style.color = color;
+            }
+          }
+        });
+      });
+  }
+  
+  fetchLive();
+  setInterval(fetchLive, 10000); // 10s updates
+});
+</script>
+{% endblock %}

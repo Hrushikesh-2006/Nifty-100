@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Nifty 100 — Financial Intelligence Platform{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Live Financial Data · 100 Companies · 12 Years</div>
+    <h1 class="hero-title">India's Premier<br><span class="gradient-text">Financial Intelligence</span><br>Platform</h1>
+    <p class="hero-subtitle">Explore financials, health scores, and growth metrics for every Nifty 100 company — no SQL required.</p>
+    <form action="/" method="get" class="hero-search">
+      <input type="text" name="q" value="{{ search_q }}" placeholder="Search TCS, HDFC, Infosys..." class="search-input" id="heroSearch" autocomplete="off">
+      <button type="submit" class="search-btn">Search</button>
+    </form>
+
+    <div class="hero-quick-actions" style="margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+      <a href="/screener/" class="btn" style="background: linear-gradient(135deg, var(--cyan), #3b82f6); color: white; border: none; border-radius: 50px; padding: 12px 28px; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(6,182,212,0.4);">
+        🔍 Screener
+      </a>
+      <a href="/compare/" class="btn" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; border: none; border-radius: 50px; padding: 12px 28px; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 700; box-shadow: 0 4px 15px rgba(236,72,153,0.4);">
+        ⚖️ Compare
+      </a>
+      <a href="{% url 'powerbi_view' %}" class="btn" style="background: linear-gradient(135deg, var(--gold), #f97316); color: #000; border: none; border-radius: 50px; padding: 12px 28px; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 800; box-shadow: 0 4px 15px rgba(245,158,11,0.4);">
+        📊 Power BI Viewer
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<section class="stats-strip">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number">{{ total_companies }}</div>
+      <div class="stat-label">Companies</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{ total_sectors }}</div>
+      <div class="stat-label">Sectors</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">12+</div>
+      <div class="stat-label">Years of Data</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">7</div>
+      <div class="stat-label">Data Tables</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTOR FILTERS + COMPANY GRID -->
+<section class="companies-section">
+  <div class="section-header">
+    <h2>Browse Companies</h2>
+    <span class="badge-count">{{ companies|length }} companies</span>
+  </div>
+
+  <!-- Sector Pills -->
+  <div class="sector-pills">
+    <a href="/?q={{ search_q }}" class="pill {% if not sector_filter %}pill-active{% endif %}">All</a>
+    {% for s in sectors %}
+    <a href="/?sector={{ s.sector_name }}&q={{ search_q }}" 
+       class="pill {% if sector_filter == s.sector_name %}pill-active{% endif %}">
+      {{ s.sector_name }} <span class="pill-count">{{ s.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Company Cards Grid -->
+  <div class="company-grid">
+    {% for c in companies %}
+    <a href="/company/{{ c.symbol }}/" class="company-card" id="card-{{ c.symbol }}">
+      <div class="card-header">
+        <div class="card-symbol">{{ c.symbol }}</div>
+        {% with score=c.ml_scores.all.0 %}
+        {% if score %}
+        <div class="health-badge health-{{ score.health_label|lower }}">{{ score.health_label }}</div>
+        {% endif %}
+        {% endwith %}
+      </div>
+      <div class="card-name">{{ c.company_name|truncatechars:40 }}</div>
+      <div class="card-sector" style="display:flex; justify-content:space-between;">
+        <span>{{ c.sector.sector_name }}</span>
+        <span class="live-card-price" data-card-symbol="{{ c.symbol }}" style="font-weight:bold; color:#f8fafc; display:flex; align-items:center; gap:4px;">
+            <span style="font-size:10px; color:#64748b;">₹--</span>
+        </span>
+      </div>
+      <div class="card-metrics">
+        {% if c.roce_percentage %}
+        <div class="metric-chip">
+          <span class="metric-label">ROCE</span>
+          <span class="metric-value">{{ c.roce_percentage|floatformat:1 }}%</span>
+        </div>
+        {% endif %}
+        {% if c.roe_percentage %}
+        <div class="metric-chip">
+          <span class="metric-label">ROE</span>
+          <span class="metric-value">{{ c.roe_percentage|floatformat:1 }}%</span>
+        </div>
+        {% endif %}
+      </div>
+      {% with score=c.ml_scores.all.0 %}
+      {% if score and score.overall_score %}
+      <div class="score-bar-wrap">
+        <div class="score-bar" style="width: {{ score.overall_score }}%;"></div>
+        <span class="score-num">{{ score.overall_score|floatformat:0 }}/100</span>
+      </div>
+      {% endif %}
+      {% endwith %}
+    </a>
+    {% empty %}
+    <div class="empty-state">
+      <p>No companies found. <a href="/">Clear filters</a></p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- LEADERBOARD -->
+{% if leaderboard %}
+<section class="leaderboard-section">
+  <div class="section-header">
+    <h2>Top Performers by Health Score</h2>
+  </div>
+  <div class="leaderboard-table-wrap">
+    <table class="leaderboard-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Symbol</th><th>Company</th><th>Sector</th>
+          <th>ROCE%</th><th>ROE%</th><th>Score</th><th>Live Price</th><th>Chg %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in leaderboard %}
+        {% with score=c.ml_scores.all.0 %}
+        <tr onclick="window.location='/company/{{ c.symbol }}/'" style="cursor:pointer">
+          <td class="rank-cell">{{ forloop.counter }}</td>
+          <td><a href="/company/{{ c.symbol }}/" class="sym-link">{{ c.symbol }}</a></td>
+          <td>{{ c.company_name|truncatechars:35 }}</td>
+          <td><span class="sector-tag">{{ c.sector.sector_name }}</span></td>
+          <td class="num-cell">{% if c.roce_percentage %}{{ c.roce_percentage|floatformat:1 }}%{% else %}—{% endif %}</td>
+          <td class="num-cell">{% if c.roe_percentage %}{{ c.roe_percentage|floatformat:1 }}%{% else %}—{% endif %}</td>
+          <td class="num-cell score-cell">{% if score %}{{ score.overall_score|floatformat:1 }}{% else %}—{% endif %}</td>
+          <td class="num-cell live-leader-price" data-sym="{{ c.symbol }}" style="font-weight: 700;">₹--</td>
+          <td class="num-cell live-leader-chg" data-sym="{{ c.symbol }}">--%</td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const priceElements = document.querySelectorAll('.live-card-price, .live-leader-price');
+  if (priceElements.length === 0) return;
+  
+  // Collect all unique symbols to poll
+  const symbolSet = new Set();
+  document.querySelectorAll('[data-card-symbol]').forEach(el => symbolSet.add(el.getAttribute('data-card-symbol')));
+  document.querySelectorAll('[data-sym]').forEach(el => symbolSet.add(el.getAttribute('data-sym')));
+  
+  const symbols = Array.from(symbolSet);
+  
+  function fetchChunk(chunk) {
+    if (chunk.length === 0) return;
+    const symStr = chunk.join(',');
+    fetch(`/api/live-metrics/?symbols=${symStr}`)
+      .then(r => r.json())
+      .then(data => {
+        chunk.forEach(sym => {
+          const info = data[sym];
+          if (info) {
+            const isUp = info.change >= 0;
+            const color = isUp ? '#22c55e' : '#ef4444';
+            const arrow = isUp ? '▲' : '▼';
+            
+            // Update Cards
+            const cardEl = document.querySelector(`.live-card-price[data-card-symbol="${sym}"]`);
+            if (cardEl) {
+              cardEl.innerHTML = `₹${info.price.toFixed(2)} <span style="color:${color}; font-size:11px;">${arrow} ${info.pct_change.toFixed(2)}%</span>`;
+            }
+            
+            // Update Leaderboard Price
+            const leaderPriceEl = document.querySelector(`.live-leader-price[data-sym="${sym}"]`);
+            if (leaderPriceEl) {
+              leaderPriceEl.textContent = `₹${info.price.toFixed(2)}`;
+            }
+            
+            // Update Leaderboard Change
+            const leaderChgEl = document.querySelector(`.live-leader-chg[data-sym="${sym}"]`);
+            if (leaderChgEl) {
+              leaderChgEl.innerHTML = `<span style="color:${color}; font-weight:600;">${arrow} ${info.pct_change.toFixed(2)}%</span>`;
+            }
+          }
+        });
+      }).catch(e => console.error("Polling error:", e));
+  }
+  
+  function pollAll() {
+    for (let i = 0; i < symbols.length; i += 30) {
+      fetchChunk(symbols.slice(i, i + 30));
+    }
+  }
+  
+  pollAll();
+  setInterval(pollAll, 12000); // 12s updates for slightly faster feel
+});
+</script>
+{% endblock %}

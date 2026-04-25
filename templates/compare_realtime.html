@@ -1,0 +1,568 @@
+{% extends "base.html" %} {% block title %}Compare Companies | Nifty 100{%
+endblock %} {% block content %}
+<div class="compare-page">
+  <div style="margin-bottom: 20px">
+    <a
+      href="/"
+      class="btn"
+      style="
+        background: var(--bg-card2);
+        color: var(--text-primary);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      "
+    >
+      &larr; Back to Home
+    </a>
+    <button
+      onclick="fetchRealtimeData()"
+      class="btn"
+      style="
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        margin-left: 10px;
+        cursor: pointer;
+      "
+    >
+      🔄 Fetch Real-time Data
+    </button>
+  </div>
+
+  <h1>Side-by-Side <span class="gradient-text">Comparison</span></h1>
+  <p style="color: var(--text-secondary); margin-bottom: 28px">
+    Compare any two Nifty 100 companies head-to-head with real-time financial
+    metrics.
+  </p>
+
+  <form method="get" class="compare-form">
+    <div class="filter-group">
+      <label
+        style="
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+          text-transform: uppercase;
+        "
+        >Company 1</label
+      >
+      <select name="sym1" class="compare-select" onchange="this.form.submit()">
+        <option value="">Select company...</option>
+        {% for sym, name in all_companies %}
+        <option value="{{ sym }}" {% if sym1="" ="sym" %}selected{% endif %}>
+          {{ sym }} — {{ name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div
+      style="
+        align-self: flex-end;
+        padding-bottom: 10px;
+        font-size: 20px;
+        color: var(--text-muted);
+      "
+    >
+      vs
+    </div>
+    <div class="filter-group">
+      <label
+        style="
+          font-size: 12px;
+          color: var(--text-muted);
+          font-weight: 600;
+          text-transform: uppercase;
+        "
+        >Company 2</label
+      >
+      <select name="sym2" class="compare-select" onchange="this.form.submit()">
+        <option value="">Select company...</option>
+        {% for sym, name in all_companies %}
+        <option value="{{ sym }}" {% if sym2="" ="sym" %}selected{% endif %}>
+          {{ sym }} — {{ name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="filter-btn" style="align-self: flex-end">
+      Compare
+    </button>
+  </form>
+
+  {% if c1 and c2 %}
+  <div class="compare-grid">
+    {% for c in companies_to_compare %} {% with score=c.ml_scores.first
+    realtime=c.realtime_data %}
+    <div class="compare-card">
+      <div class="compare-sym">{{ c.symbol }}</div>
+      <div class="compare-name">{{ c.company_name }}</div>
+
+      {% if score %}
+      <div style="margin-bottom: 14px">
+        <span class="health-badge health-{{ score.health_label|lower }}"
+          >{{ score.health_label }}</span
+        >
+        <span
+          style="
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--gold);
+            margin-left: 10px;
+          "
+          >{{ score.overall_score|floatformat:0 }}/100</span
+        >
+      </div>
+      {% endif %}
+
+      <!-- Historical Data Section -->
+      <div
+        style="
+          border-top: 1px solid var(--border-light);
+          padding-top: 15px;
+          margin-bottom: 15px;
+        "
+      >
+        <h4
+          style="
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+          "
+        >
+          Historical Data
+        </h4>
+        <div class="compare-metrics">
+          <div class="cm-row">
+            <span class="cm-label">Sector</span>
+            <span class="cm-val">{{ c.sector.sector_name }}</span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">ROCE %</span>
+            <span class="cm-val positive"
+              >{% if c.roce_percentage %}{{ c.roce_percentage|floatformat:1
+              }}%{% else %}—{% endif %}</span
+            >
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">ROE %</span>
+            <span class="cm-val positive"
+              >{% if c.roe_percentage %}{{ c.roe_percentage|floatformat:1 }}%{%
+              else %}—{% endif %}</span
+            >
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Face Value</span>
+            <span class="cm-val"
+              >{% if c.face_value %}₹{{ c.face_value }}{% else %}—{% endif
+              %}</span
+            >
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Book Value</span>
+            <span class="cm-val"
+              >{% if c.book_value %}₹{{ c.book_value|floatformat:0 }}{% else
+              %}—{% endif %}</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- ML Score Breakdown -->
+      {% if score %}
+      <div
+        style="
+          border-top: 1px solid var(--border-light);
+          padding-top: 15px;
+          margin-bottom: 15px;
+        "
+      >
+        <h4
+          style="
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+          "
+        >
+          Score Breakdown
+        </h4>
+        <div class="compare-metrics">
+          <div class="cm-row">
+            <span class="cm-label">Profitability</span>
+            <span class="cm-val"
+              >{{ score.profitability_score|floatformat:0 }}</span
+            >
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Growth</span>
+            <span class="cm-val">{{ score.growth_score|floatformat:0 }}</span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Leverage</span>
+            <span class="cm-val">{{ score.leverage_score|floatformat:0 }}</span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Cash Flow</span>
+            <span class="cm-val">{{ score.cashflow_score|floatformat:0 }}</span>
+          </div>
+          <div class="cm-row">
+            <span class="cm-label">Dividend</span>
+            <span class="cm-val">{{ score.dividend_score|floatformat:0 }}</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Real-time Financial Data Section -->
+      {% if realtime %}
+      <div style="border-top: 1px solid var(--border-light); padding-top: 15px">
+        <h4
+          style="
+            color: var(--gold);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+          "
+        >
+          ⚡ Real-time Metrics (FMP API)
+        </h4>
+        <div class="compare-metrics" style="font-size: 0.85rem">
+          <!-- Income Statement -->
+          {% if realtime.revenue %}
+          <div class="cm-row">
+            <span class="cm-label">Revenue</span>
+            <span class="cm-val">₹{{ realtime.revenue|floatformat:0 }}</span>
+          </div>
+          {% endif %} {% if realtime.net_income %}
+          <div class="cm-row">
+            <span class="cm-label">Net Income</span>
+            <span class="cm-val">₹{{ realtime.net_income|floatformat:0 }}</span>
+          </div>
+          {% endif %} {% if realtime.eps %}
+          <div class="cm-row">
+            <span class="cm-label">EPS</span>
+            <span class="cm-val">₹{{ realtime.eps|floatformat:2 }}</span>
+          </div>
+          {% endif %} {% if realtime.gross_profit_margin %}
+          <div class="cm-row">
+            <span class="cm-label">Gross Margin %</span>
+            <span class="cm-val positive"
+              >{{ realtime.gross_profit_margin|floatformat:1 }}%</span
+            >
+          </div>
+          {% endif %} {% if realtime.net_income_ratio %}
+          <div class="cm-row">
+            <span class="cm-label">Net Margin %</span>
+            <span class="cm-val positive"
+              >{{ realtime.net_income_ratio|floatformat:1 }}%</span
+            >
+          </div>
+          {% endif %}
+
+          <!-- Balance Sheet -->
+          {% if realtime.total_assets %}
+          <div class="cm-row">
+            <span class="cm-label">Total Assets</span>
+            <span class="cm-val"
+              >₹{{ realtime.total_assets|floatformat:0 }}</span
+            >
+          </div>
+          {% endif %} {% if realtime.total_equity %}
+          <div class="cm-row">
+            <span class="cm-label">Total Equity</span>
+            <span class="cm-val"
+              >₹{{ realtime.total_equity|floatformat:0 }}</span
+            >
+          </div>
+          {% endif %} {% if realtime.current_ratio %}
+          <div class="cm-row">
+            <span class="cm-label">Current Ratio</span>
+            <span class="cm-val"
+              >{{ realtime.current_ratio|floatformat:2 }}</span
+            >
+          </div>
+          {% endif %} {% if realtime.debt_to_equity %}
+          <div class="cm-row">
+            <span class="cm-label">Debt-to-Equity</span>
+            <span class="cm-val"
+              >{{ realtime.debt_to_equity|floatformat:2 }}</span
+            >
+          </div>
+          {% endif %}
+
+          <!-- Cash Flow -->
+          {% if realtime.operating_cash_flow %}
+          <div class="cm-row">
+            <span class="cm-label">Operating CF</span>
+            <span class="cm-val"
+              >₹{{ realtime.operating_cash_flow|floatformat:0 }}</span
+            >
+          </div>
+          {% endif %} {% if realtime.free_cash_flow %}
+          <div class="cm-row">
+            <span class="cm-label">Free CF</span>
+            <span class="cm-val positive"
+              >₹{{ realtime.free_cash_flow|floatformat:0 }}</span
+            >
+          </div>
+          {% endif %}
+
+          <!-- Ratios -->
+          {% if realtime.pe_ratio %}
+          <div class="cm-row">
+            <span class="cm-label">P/E Ratio</span>
+            <span class="cm-val">{{ realtime.pe_ratio|floatformat:1 }}</span>
+          </div>
+          {% endif %} {% if realtime.roe %}
+          <div class="cm-row">
+            <span class="cm-label">ROE %</span>
+            <span class="cm-val positive"
+              >{{ realtime.roe|floatformat:1 }}%</span
+            >
+          </div>
+          {% endif %} {% if realtime.roa %}
+          <div class="cm-row">
+            <span class="cm-label">ROA %</span>
+            <span class="cm-val positive"
+              >{{ realtime.roa|floatformat:1 }}%</span
+            >
+          </div>
+          {% endif %} {% if realtime.dividend_yield %}
+          <div class="cm-row">
+            <span class="cm-label">Dividend Yield %</span>
+            <span class="cm-val positive"
+              >{{ realtime.dividend_yield|floatformat:1 }}%</span
+            >
+          </div>
+          {% endif %}
+
+          <!-- Metadata -->
+          <div
+            class="cm-row"
+            style="
+              margin-top: 10px;
+              border-top: 1px solid var(--border-light);
+              padding-top: 10px;
+              font-size: 0.75rem;
+              color: var(--text-muted);
+            "
+          >
+            <span class="cm-label">Last Updated</span>
+            <span class="cm-val"
+              >{{ realtime.fetched_at|date:"Y-m-d H:i" }}</span
+            >
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div
+        style="
+          border-top: 1px solid var(--border-light);
+          padding-top: 15px;
+          background: var(--bg-muted);
+          padding: 15px;
+          border-radius: 6px;
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 0.85rem;
+        "
+      >
+        💡 No real-time data yet. Click "Fetch Real-time Data" button above to
+        get live metrics from Financial Modeling Prep API.
+      </div>
+      {% endif %}
+    </div>
+    {% endwith %} {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 40px; color: var(--text-secondary)">
+    <p>Select two companies to compare.</p>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+  .compare-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .compare-form {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .compare-select {
+    padding: 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    background: var(--bg-card2);
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+
+  .filter-btn {
+    padding: 10px 20px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+  }
+
+  .compare-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .compare-sym {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+
+  .compare-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+
+  .health-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .health-excellent {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+  }
+
+  .health-good {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+  }
+
+  .health-average {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+  }
+
+  .health-weak {
+    background: rgba(255, 152, 0, 0.2);
+    color: #ff9800;
+  }
+
+  .health-poor {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+  }
+
+  .compare-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: var(--bg-muted);
+    border-radius: 4px;
+  }
+
+  .cm-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .cm-val {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .cm-val.positive {
+    color: #4caf50;
+  }
+
+  h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+  }
+</style>
+
+<script>
+  function fetchRealtimeData() {
+    const sym1 = new URLSearchParams(window.location.search).get("sym1");
+    const sym2 = new URLSearchParams(window.location.search).get("sym2");
+
+    if (!sym1 || !sym2) {
+      alert("Please select two companies to compare first.");
+      return;
+    }
+
+    const symbols = [sym1, sym2];
+
+    // Fetch real-time data for both companies
+    symbols.forEach((symbol) => {
+      fetch(`/api/realtime/fetch/?symbol=${symbol}`, { method: "POST" })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(`✓ Real-time data fetched for ${symbol}`);
+        })
+        .catch((error) => {
+          console.error(`✗ Error fetching data for ${symbol}:`, error);
+        });
+    });
+
+    // Reload the page after a short delay
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  }
+</script>
+{% endblock %}

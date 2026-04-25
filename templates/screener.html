@@ -1,0 +1,177 @@
+{% extends "base.html" %} {% block title %}Screener — Filter Nifty 100 Companies
+| Nifty 100{% endblock %} {% block content %}
+<div class="screener-page">
+  <div style="margin-bottom: 20px;">
+    <a href="/" class="btn" style="background: var(--bg-card2); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: 8px; padding: 8px 16px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+      &larr; Back to Home
+    </a>
+  </div>
+  <h1>Company <span class="gradient-text">Screener</span></h1>
+  <p style="color: var(--text-secondary); margin-bottom: 28px">
+    Filter all 100 companies by sector, ROCE, ROE and more.
+  </p>
+
+  <form class="filter-bar" id="screener-form">
+    <div class="filter-group">
+      <label>Sector</label>
+      <select name="sector" class="filter-select form-select">
+        <option value="">All Sectors</option>
+        {% for s in sectors %}
+        <option
+          value="{{ s.sector_name }}"
+          {% if s.sector_name == sector_f %}selected{% endif %}
+        >
+          {{ s.sector_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Min ROCE %</label>
+      <input
+        type="number"
+        name="min_roce"
+        value="{{ min_roce }}"
+        placeholder="e.g. 15"
+        class="filter-input"
+        step="0.1"
+      />
+    </div>
+    <div class="filter-group">
+      <label>Min ROE %</label>
+      <input
+        type="number"
+        name="min_roe"
+        value="{{ min_roe }}"
+        placeholder="e.g. 15"
+        class="filter-input"
+        step="0.1"
+      />
+    </div>
+    <button
+      type="button"
+      class="filter-btn btn btn-primary"
+      onclick="handleScreenerFilter()"
+    >
+      Apply Filters
+    </button>
+    <a href="/screener/" class="btn btn-outline-secondary btn-sm ms-auto"
+      >Reset</a
+    >
+  </form>
+
+  <script>
+    function handleScreenerFilter() {
+      const formData = new FormData(document.getElementById("screener-form"));
+      const params = new URLSearchParams(formData).toString();
+      fetch("/api/screener/?" + params)
+        .then((res) => res.json())
+        .then((data) => {
+          const tbody = document.getElementById("screener-tbody");
+          if (!tbody) return;
+          const records = data.results ? data.results : data;
+          const totalCount = data.count ? data.count : records.length;
+          
+          tbody.innerHTML =
+            records
+              .map(
+                (c, idx) => `
+        <tr onclick="window.location='/company/${c.symbol}/'" style="cursor:pointer">
+          <td class="rank-cell">${idx + 1}</td>
+          <td><a href="/company/${c.symbol}/" class="sym-link">${c.symbol}</a></td>
+          <td>${c.company_name.substring(0, 40)}</td>
+          <td><span class="sector-tag">${c.sector_name || "—"}</span></td>
+          <td class="num-cell">${c.face_value || "—"}</td>
+          <td class="num-cell">${c.book_value ? parseFloat(c.book_value).toFixed(0) : "—"}</td>
+          <td class="num-cell ${c.roce_percentage > 15 ? "positive" : ""}">${c.roce_percentage ? parseFloat(c.roce_percentage).toFixed(1) + "%" : "—"}</td>
+          <td class="num-cell ${c.roe_percentage > 15 ? "positive" : ""}">${c.roe_percentage ? parseFloat(c.roe_percentage).toFixed(1) + "%" : "—"}</td>
+          <td class="num-cell score-cell">${c.latest_score ? parseFloat(c.latest_score).toFixed(0) : "—"}</td>
+          <td>${c.health_label ? '<span class="health-badge health-' + c.health_label.toLowerCase() + '">' + c.health_label + '</span>' : ""}</td>
+        </tr>
+      `,
+              )
+              .join("") ||
+            '<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--text-muted);">No companies match your filters.</td></tr>';
+          
+          document.querySelector(".badge-count").textContent = totalCount + " companies";
+        })
+        .catch((err) => console.error("Filter error", err));
+    }
+  </script>
+
+  <div class="section-header">
+    <h2>Results</h2>
+    <span class="badge-count">{{ companies|length }} companies</span>
+  </div>
+
+  <div class="leaderboard-table-wrap table-responsive">
+    <table class="leaderboard-table table table-dark table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Symbol</th>
+          <th>Company</th>
+          <th>Sector</th>
+          <th>Face Val</th>
+          <th>Book Val</th>
+          <th>ROCE%</th>
+          <th>ROE%</th>
+          <th>Score</th>
+          <th>Health</th>
+        </tr>
+      </thead>
+      <tbody id="screener-tbody">
+        {% for c in companies %} {% with score=c.ml_scores.all.0 %}
+        <tr
+          onclick="window.location='/company/{{ c.symbol }}/'"
+          style="cursor: pointer"
+        >
+          <td class="rank-cell">{{ forloop.counter }}</td>
+          <td>
+            <a href="/company/{{ c.symbol }}/" class="sym-link"
+              >{{ c.symbol }}</a
+            >
+          </td>
+          <td>{{ c.company_name|truncatechars:40 }}</td>
+          <td><span class="sector-tag">{{ c.sector.sector_name }}</span></td>
+          <td class="num-cell">
+            {% if c.face_value %}{{ c.face_value }}{% else %}—{% endif %}
+          </td>
+          <td class="num-cell">
+            {% if c.book_value %}{{ c.book_value|floatformat:0 }}{% else %}—{% endif %}
+          </td>
+          <td
+            class="num-cell {% if c.roce_percentage and c.roce_percentage > 15 %}positive{% endif %}"
+          >
+            {% if c.roce_percentage %}{{ c.roce_percentage|floatformat:1 }}%{% else %}—{% endif %}
+          </td>
+          <td
+            class="num-cell {% if c.roe_percentage and c.roe_percentage > 15 %}positive{% endif %}"
+          >
+            {% if c.roe_percentage %}{{ c.roe_percentage|floatformat:1 }}%{% else %}—{% endif %}
+          </td>
+          <td class="num-cell score-cell">
+            {% if score and score.overall_score %}{{ score.overall_score|floatformat:0 }}{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if score %}<span
+              class="health-badge health-{{ score.health_label|lower }}"
+              >{{ score.health_label }}</span
+            >{% endif %}
+          </td>
+        </tr>
+        {% endwith %} {% empty %}
+        <tr>
+          <td
+            colspan="10"
+            style="text-align: center; padding: 32px; color: var(--text-muted)"
+          >
+            No companies match your filters.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
